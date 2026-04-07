@@ -7,77 +7,38 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
-  <style>
-    .line-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-    .tab-button.active { border-bottom: 3px solid #10b981; color: white; }
-  </style>
 </head>
-<body class="bg-gray-950 text-white min-h-screen">
+<body class="bg-gray-950 text-white">
 
-  <nav class="bg-black sticky top-0 z-50 shadow-lg">
-    <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+  <nav class="bg-black p-6">
+    <div class="max-w-7xl mx-auto flex justify-between items-center">
       <h1 class="text-3xl font-bold text-emerald-400">📦 Catálogo Premium</h1>
-      <div class="flex items-center gap-6">
-        <button onclick="showSection('catalog')" class="hover:text-emerald-400">Catálogo</button>
-        <button onclick="showLoginModal()" class="bg-emerald-600 hover:bg-emerald-700 px-6 py-3 rounded-2xl font-medium">
-          🔑 Entrar como Admin
-        </button>
-        <button onclick="logout()" id="btnLogout" class="hidden text-red-400 hover:text-red-500">Sair</button>
+      <div>
+        <button onclick="showSection('catalog')" class="mr-6 hover:text-emerald-400">Catálogo</button>
+        <button onclick="showLoginModal()" class="bg-emerald-600 px-6 py-3 rounded-2xl font-medium">🔑 Entrar como Admin</button>
+        <button onclick="logout()" id="btnLogout" class="hidden ml-4 text-red-400">Sair</button>
       </div>
     </div>
   </nav>
 
-  <!-- Catálogo Público -->
+  <!-- Catálogo -->
   <section id="section-catalog" class="max-w-7xl mx-auto px-6 py-12">
-    <h2 class="text-4xl font-bold text-center mb-3">Assinaturas Premium</h2>
-    <p class="text-center text-gray-400 mb-10">Peça direto no WhatsApp</p>
-
-    <div class="flex flex-col md:flex-row gap-4 mb-10">
-      <input id="searchInput" type="text" placeholder="Buscar..." class="flex-1 bg-gray-900 border border-gray-700 rounded-2xl px-6 py-4" onkeyup="filterProducts()">
-      <select id="categoryFilter" onchange="filterProducts()" class="bg-gray-900 border border-gray-700 rounded-2xl px-6 py-4">
-        <option value="">Todas</option>
-      </select>
-    </div>
-
-    <div id="productsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"></div>
+    <h2 class="text-4xl font-bold text-center">Assinaturas Premium</h2>
+    <p class="text-center text-gray-400 mt-4">O catálogo aparece aqui</p>
   </section>
 
-  <!-- Painel Admin -->
-  <section id="section-admin" class="max-w-7xl mx-auto px-6 py-10 hidden">
-    <div class="flex justify-between mb-8">
-      <h2 class="text-3xl font-bold">Painel Admin</h2>
-      <div id="adminInfo" class="text-emerald-400"></div>
-    </div>
-
-    <div class="flex border-b border-gray-700 mb-8">
-      <button onclick="openTab(0)" id="tab0" class="tab-button active px-8 py-4">Produtos</button>
-      <button onclick="openTab(1)" id="tab1" class="tab-button px-8 py-4">Vendas</button>
-      <button onclick="openTab(2)" id="tab2" class="tab-button px-8 py-4">Dashboard</button>
-    </div>
-
-    <div id="tab-content-0">
-      <button onclick="showProductModal()" class="bg-emerald-600 px-6 py-3 rounded-2xl mb-6">+ Novo Produto</button>
-      <div id="productsAdminList" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
-    </div>
-
-    <div id="tab-content-1" class="hidden">
-      <button onclick="showSaleModal()" class="bg-emerald-600 px-6 py-3 rounded-2xl mb-6">+ Nova Venda</button>
-      <table class="w-full bg-gray-900 rounded-3xl">
-        <thead class="bg-gray-800"><tr><th class="px-6 py-4 text-left">Pedido</th><th class="px-6 py-4 text-left">Produto</th><th class="px-6 py-4 text-right">Venda</th><th class="px-6 py-4 text-right">Lucro</th><th class="px-6 py-4 text-center">Recebido</th><th class="px-6 py-4">Ações</th></tr></thead>
-        <tbody id="salesTableBody"></tbody>
-      </table>
-    </div>
-
-    <div id="tab-content-2" class="hidden">
-      <div id="dashboardSummary" class="bg-gray-900 p-10 rounded-3xl text-lg"></div>
-    </div>
+  <!-- Admin -->
+  <section id="section-admin" class="max-w-7xl mx-auto px-6 py-12 hidden">
+    <h2 class="text-3xl font-bold mb-6">Painel Administrativo</h2>
+    <p id="adminInfo" class="text-emerald-400"></p>
+    <p class="mt-8 text-gray-400">Use as abas Produtos / Vendas / Dashboard aqui (será expandido depois)</p>
   </section>
 
   <!-- Modal Login -->
   <div id="loginModal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-    <div class="bg-gray-900 rounded-3xl p-8 w-full max-w-md">
-      <h3 class="text-2xl font-bold mb-6">Login Admin</h3>
-      <input id="loginEmail" type="email" placeholder="E-mail" class="w-full bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4 mb-4">
+    <div class="bg-gray-900 rounded-3xl p-8 w-full max-w-sm mx-4">
+      <h3 class="text-2xl font-bold mb-6">Login Administrador</h3>
+      <input id="loginEmail" type="email" placeholder="Seu e-mail" class="w-full bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4 mb-4">
       <input id="loginPassword" type="password" placeholder="Senha" class="w-full bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4 mb-6">
       <button onclick="performLogin()" class="w-full bg-emerald-600 py-4 rounded-2xl font-bold">Entrar</button>
       <button onclick="closeLoginModal()" class="mt-4 text-gray-400 w-full">Cancelar</button>
@@ -85,17 +46,19 @@
   </div>
 
   <script>
-    // ==================== SUPABASE CONFIG ====================
-    const supabaseUrl = 'https://bhvvdemvhtbfvwxdjvta.supabase.co';   // ← TROQUE
-    const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJodnZkZW12aHRiZnZ3eGRqdnRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODA1MzMsImV4cCI6MjA5MTE1NjUzM30.5W5l4SnZdxE1Ir7pGgI6KlQNa8uUteYeXRfUTFCZk0s';             // ← TROQUE
+    // === CONFIGURE AQUI ===
+    const supabaseUrl = 'https://bhvvdemvhtbfvwxdjvta.supabase.co';   // ← MUDE
+    const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJodnZkZW12aHRiZnZ3eGRqdnRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODA1MzMsImV4cCI6MjA5MTE1NjUzM30.5W5l4SnZdxE1Ir7pGgI6KlQNa8uUteYeXRfUTFCZk0s';             // ← MUDE
 
     const supabase = supabase.createClient(supabaseUrl, supabaseAnonKey);
 
     let currentUser = null;
-    let allProducts = [];
-    let allSales = [];
 
-    // ==================== LOGIN ====================
+    function showSection(section) {
+      document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+      document.getElementById(`section-${section}`).classList.remove('hidden');
+    }
+
     function showLoginModal() {
       document.getElementById('loginModal').classList.remove('hidden');
     }
@@ -108,39 +71,38 @@
       const email = document.getElementById('loginEmail').value;
       const password = document.getElementById('loginPassword').value;
 
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
-        alert("Erro: " + error.message);
+      if (!email || !password) {
+        alert("Digite e-mail e senha");
         return;
       }
 
-      currentUser = data.user;
-      closeLoginModal();
-      document.getElementById('btnLogout').classList.remove('hidden');
-      document.getElementById('adminInfo').textContent = currentUser.email;
-      showSection('admin');
-      loadProducts();
-      loadSales();
-      loadDashboard();
-    }
-
-    // Função para usar no F12 (corrigida)
-    window.adminLogin = async function() {
-      const email = prompt("E-mail do admin:");
-      const password = prompt("Senha:");
-      if (!email || !password) return;
-
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
       if (error) {
         alert("Erro: " + error.message);
       } else {
         currentUser = data.user;
+        closeLoginModal();
         document.getElementById('btnLogout').classList.remove('hidden');
-        document.getElementById('adminInfo').textContent = currentUser.email;
+        document.getElementById('adminInfo').textContent = "Logado como: " + currentUser.email;
         showSection('admin');
-        loadProducts();
-        loadSales();
-        loadDashboard();
+        alert("Login realizado com sucesso!");
+      }
+    }
+
+    // Função para F12 (adminLogin)
+    window.adminLogin = async function() {
+      const email = prompt("Digite o e-mail admin:");
+      const password = prompt("Digite a senha:");
+      if (!email || !password) return;
+
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) alert("Erro: " + error.message);
+      else {
+        currentUser = data.user;
+        document.getElementById('btnLogout').classList.remove('hidden');
+        document.getElementById('adminInfo').textContent = "Logado como: " + currentUser.email;
+        showSection('admin');
       }
     };
 
@@ -149,67 +111,10 @@
       location.reload();
     }
 
-    function showSection(section) {
-      document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
-      document.getElementById(`section-${section}`).classList.remove('hidden');
-    }
-
-    function openTab(n) {
-      document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
-      document.getElementById(`tab${n}`).classList.add('active');
-      document.querySelectorAll('[id^="tab-content-"]').forEach(d => d.classList.add('hidden'));
-      document.getElementById(`tab-content-${n}`).classList.remove('hidden');
-    }
-
-    // ==================== PRODUTOS (simplificado para teste) ====================
-    async function loadProducts() {
-      const { data } = await supabase.from('products').select('*');
-      allProducts = data || [];
-      renderPublicCatalog();
-      renderAdminProducts();
-    }
-
-    function renderPublicCatalog() {
-      const container = document.getElementById('productsGrid');
-      container.innerHTML = allProducts.map(p => `
-        <div class="bg-gray-900 rounded-3xl p-6">
-          <h3 class="font-bold text-xl">${p.name}</h3>
-          <p class="text-emerald-400 mt-2">R$ ${p.price}</p>
-          <button onclick="sendToWhatsApp('${p.name}', ${p.price})" class="mt-6 w-full bg-emerald-600 py-4 rounded-2xl">
-            Pedir no WhatsApp
-          </button>
-        </div>
-      `).join('');
-    }
-
-    function sendToWhatsApp(name, price) {
-      const numero = "5511999999999"; // troque
-      window.open(`https://wa.me/${numero}?text=Quero%20${encodeURIComponent(name)}%20-%20R$${price}`);
-    }
-
-    function renderAdminProducts() {
-      const container = document.getElementById('productsAdminList');
-      container.innerHTML = allProducts.map(p => `
-        <div class="bg-gray-900 p-6 rounded-3xl">
-          <h4>${p.name}</h4>
-          <p>R$ ${p.price}</p>
-        </div>
-      `).join('');
-    }
-
-    // Funções básicas para não dar erro
-    function filterProducts() {}
-    function showProductModal() { alert("Modal de produto - implementado na versão completa"); }
-    function showSaleModal() { alert("Modal de venda - implementado na versão completa"); }
-    function loadSales() { document.getElementById('salesTableBody').innerHTML = "<tr><td colspan='6' class='p-8 text-center text-gray-400'>Nenhuma venda ainda</td></tr>"; }
-    function loadDashboard() {
-      document.getElementById('dashboardSummary').innerHTML = `<p class="text-center text-gray-400">Dashboard será carregado após cadastrar vendas</p>`;
-    }
-
-    // Inicializa
+    // Inicia mostrando o catálogo
     window.onload = () => {
       showSection('catalog');
-      console.log("%c✅ Sistema carregado! Use adminLogin() no console (F12) ou clique no botão Entrar como Admin", "color: #10b981");
+      console.log("%c✅ Página carregada! Teste o botão ou digite adminLogin() no console", "color: lime");
     };
   </script>
 </body>
