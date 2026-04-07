@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Catálogo Premium - Assinaturas</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <style>
+    .line-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  </style>
+</head>
+<body class="bg-gray-950 text-white min-h-screen">
+
+  <!-- Navbar -->
+  <nav class="bg-black sticky top-0 z-50 shadow-lg">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+      <h1 class="text-3xl font-bold text-emerald-400 flex items-center gap-2">
+        <i class="fas fa-crown"></i> Catálogo Premium
+      </h1>
+      <div class="flex items-center gap-6 text-lg">
+        <button onclick="showSection('catalog')" class="hover:text-emerald-400 transition">🏠 Catálogo</button>
+        <button onclick="showSection('admin')" id="btnAdmin" class="hidden hover:text-emerald-400 transition">🔧 Admin</button>
+        <button onclick="logout()" id="btnLogout" class="hidden text-red-400 hover:text-red-500 transition">Sair</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ==================== CATÁLOGO PÚBLICO ==================== -->
+  <section id="section-catalog" class="max-w-7xl mx-auto px-6 py-10">
+    <div class="text-center mb-10">
+      <h2 class="text-4xl font-bold mb-2">Assinaturas Premium</h2>
+      <p class="text-gray-400 text-lg">Escolha e peça direto no WhatsApp</p>
+    </div>
+
+    <div class="flex flex-col md:flex-row gap-4 mb-10">
+      <input id="searchInput" type="text" placeholder="Buscar produto..." 
+             class="flex-1 bg-gray-900 border border-gray-700 rounded-2xl px-6 py-4 focus:outline-none focus:border-emerald-500 text-lg"
+             onkeyup="filterProducts()">
+      <select id="categoryFilter" onchange="filterProducts()" 
+              class="bg-gray-900 border border-gray-700 rounded-2xl px-6 py-4 focus:outline-none focus:border-emerald-500">
+        <option value="">Todas as categorias</option>
+      </select>
+    </div>
+
+    <div id="productsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"></div>
+  </section>
+
+  <!-- ==================== PAINEL ADMIN ==================== -->
+  <section id="section-admin" class="max-w-7xl mx-auto px-6 py-10 hidden">
+    <div class="flex justify-between items-center mb-8">
+      <h2 class="text-3xl font-bold">Painel Administrativo</h2>
+      <div id="adminInfo" class="text-emerald-400 font-medium"></div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex border-b border-gray-700 mb-8 overflow-x-auto">
+      <button onclick="openTab(0)" id="tab0" class="tab-button active px-8 py-4 text-lg font-medium">Produtos</button>
+      <button onclick="openTab(1)" id="tab1" class="tab-button px-8 py-4 text-lg font-medium">Vendas</button>
+      <button onclick="openTab(2)" id="tab2" class="tab-button px-8 py-4 text-lg font-medium">Dashboard</button>
+    </div>
+
+    <!-- TAB PRODUTOS -->
+    <div id="tab-content-0">
+      <button onclick="showProductModal()" 
+              class="bg-emerald-600 hover:bg-emerald-700 px-8 py-4 rounded-2xl flex items-center gap-3 mb-8 font-bold">
+        <i class="fas fa-plus"></i> Novo Produto
+      </button>
+      <div id="productsAdminList" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+    </div>
+
+    <!-- TAB VENDAS -->
+    <div id="tab-content-1" class="hidden">
+      <button onclick="showSaleModal()" 
+              class="bg-emerald-600 hover:bg-emerald-700 px-8 py-4 rounded-2xl flex items-center gap-3 mb-8 font-bold">
+        <i class="fas fa-plus"></i> Nova Venda
+      </button>
+      <div class="overflow-x-auto">
+        <table class="w-full bg-gray-900 rounded-3xl overflow-hidden">
+          <thead class="bg-gray-800">
+            <tr>
+              <th class="px-6 py-5 text-left">Pedido</th>
+              <th class="px-6 py-5 text-left">Produto</th>
+              <th class="px-6 py-5 text-right">Venda</th>
+              <th class="px-6 py-5 text-right">Lucro Líq.</th>
+              <th class="px-6 py-5 text-center">Recebido</th>
+              <th class="px-6 py-5 text-center">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="salesTableBody" class="divide-y divide-gray-700"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB DASHBOARD -->
+    <div id="tab-content-2" class="hidden">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
+        <div class="bg-gray-900 rounded-3xl p-8">
+          <p class="text-gray-400">Vendas Hoje</p>
+          <p id="todaySales" class="text-5xl font-bold text-emerald-400 mt-2">0</p>
+        </div>
+        <div class="bg-gray-900 rounded-3xl p-8">
+          <p class="text-gray-400">Lucro Hoje</p>
+          <p id="todayProfit" class="text-5xl font-bold text-emerald-400 mt-2">R$ 0</p>
+        </div>
+        <div class="bg-gray-900 rounded-3xl p-8">
+          <p class="text-gray-400">Vendas Mês</p>
+          <p id="monthSales" class="text-5xl font-bold text-emerald-400 mt-2">0</p>
+        </div>
+        <div class="bg-gray-900 rounded-3xl p-8">
+          <p class="text-gray-400">Lucro Mês</p>
+          <p id="monthProfit" class="text-5xl font-bold text-emerald-400 mt-2">R$ 0</p>
+        </div>
+      </div>
+      <div id="dashboardSummary" class="bg-gray-900 rounded-3xl p-10 text-lg"></div>
+    </div>
+  </section>
+
+  <!-- ==================== MODAIS ==================== -->
+  <!-- Modal Produto -->
+  <div id="productModal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+    <div class="bg-gray-900 rounded-3xl max-w-lg w-full mx-4 p-8">
+      <h3 id="modalProductTitle" class="text-2xl font-bold mb-6">Novo Produto</h3>
+      <form id="productForm" onsubmit="saveProduct(event)">
+        <input type="hidden" id="productId">
+        <div class="space-y-6">
+          <div>
+            <label class="block text-sm text-gray-400 mb-2">Nome do Produto</label>
+            <input id="prodName" type="text" required class="w-full bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4">
+          </div>
+          <div>
+            <label class="block text-sm text-gray-400 mb-2">Descrição</label>
+            <textarea id="prodDesc" rows="3" class="w-full bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4"></textarea>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm text-gray-400 mb-2">Preço Normal (R$)</label>
+              <input id="prodPrice" type="number" step="0.01" required class="w-full bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4">
+            </div>
+            <div>
+              <label class="block text-sm text-gray-400 mb-2">Preço Promo (R$)</label>
+              <input id="prodPromo" type="number" step="0.01" class="w-full bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm text-gray-400 mb-2">Categoria</label>
+            <input id="prodCategory" type="text" class="w-full bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4">
+          </div>
+          <div>
+            <label class="block text-sm text-gray-400 mb-2">Foto do Produto</label>
+            <input id="prodImage" type="file" accept="image/*" class="w-full bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4">
+          </div>
+        </div>
+        <div class="flex gap-4 mt-10">
+          <button type="button" onclick="closeProductModal()" 
+                  class="flex-1 py-4 bg-gray-700 hover:bg-gray-600 rounded-2xl font-bold">Cancelar</button>
+          <button type="submit" 
+                  class="flex-1 py-4 bg-emerald-600 hover:bg-emerald-700 rounded-2xl font-bold">Salvar Produto</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Venda -->
+  <div id="saleModal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+    <div class="bg-gray-900 rounded-3xl max-w-2xl w-full mx-4 p-8 max-h-[90vh] overflow-y-auto">
+      <h3 class="text-2xl font-bold mb-6">Nova Venda</h3>
+      <form id="saleForm" onsubmit="saveSale(event)">
+        <input type="hidden" id="saleId">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label class="block text-sm text-gray-400 mb-2">Número do Pedido</label>
+            <input id="saleOrder" type="text" required class="w-full bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4">
+          </div>
+          <div>
+            <label class="block text-sm text-gray-400 mb-2">Produto Vendido</label>
+            <input id="saleProduct" type="text" required class="w-full bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4">
+          </div>
+          <div>
+            <label class="block text-sm text-gray-400 mb-2">Preço de Venda (R$)</label>
+            <input id="salePrice" type="number" step="0.01" required class="w-full bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4">
+          </div>
+          <div>
+            <label class="block text-sm text-gray-400 mb-2">Preço de Custo (R$)</label>
+            <input id="saleCost" type="number" step="0.01" required class="w-full bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4">
+          </div>
+          <div>
+            <label class="block text-sm text-gray-400 mb-2">Taxa Paga (R$)</label>
+            <input id="saleFee" type="number" step="0.01" value="0" class="w-full bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4">
+          </div>
+          <div>
+            <label class="block text-sm text-gray-400 mb-2">E-mail da Conta</label>
+            <input id="saleEmail" type="email" class="w-full bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4">
+          </div>
+          <div>
+            <label class="block text-sm text-gray-400 mb-2">Senha da Conta</label>
+            <input id="salePassword" type="text" class="w-full bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4">
+          </div>
+          <div>
+            <label class="block text-sm text-gray-400 mb-2">Link de Compra</label>
+            <input id="saleLinkBuy" type="url" class="w-full bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4">
+          </div>
+          <div class="md:col-span-2">
+            <label class="flex items-center gap-3">
+              <input id="saleReceived" type="checkbox" class="w-6 h-6 accent-emerald-500">
+              <span>Já recebi o valor da venda</span>
+            </label>
+          </div>
+        </div>
+        <div class="flex gap-4 mt-10">
+          <button type="button" onclick="closeSaleModal()" 
+                  class="flex-1 py-4 bg-gray-700 hover:bg-gray-600 rounded-2xl font-bold">Cancelar</button>
+          <button type="submit" 
+                  class="flex-1 py-4 bg-emerald-600 hover:bg-emerald-700 rounded-2xl font-bold">Salvar Venda</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // ==================== CONFIGURAÇÃO SUPABASE ====================
+    const supabaseUrl = 'https://bhvvdemvhtbfvwxdjvta.supabase.co';        // ← TROQUE
+    const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJodnZkZW12aHRiZnZ3eGRqdnRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODA1MzMsImV4cCI6MjA5MTE1NjUzM30.5W5l4SnZdxE1Ir7pGgI6KlQNa8uUteYeXRfUTFCZk0s';                  // ← TROQUE (pegue em Settings → API)
+
+    const supabase = supabase.createClient(supabaseUrl, supabaseAnonKey);
+    // =============================================================
+
+    let currentUser = null;
+    let allProducts = [];
+    let allSales = [];
+
+    // Inicialização
+    async function initApp() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        currentUser = session.user;
+        document.getElementById('btnAdmin').classList.remove('hidden');
+        document.getElementById('btnLogout').classList.remove('hidden');
+        document.getElementById('adminInfo').textContent = currentUser.email;
+        showSection('admin');
+        loadProducts();
+        loadSales();
+        loadDashboard();
+      }
+    }
+
+    // Login simples (abra o console ou crie uma página de login depois)
+    async function adminLogin() {
+      const email = prompt("Digite seu e-mail admin:");
+      const password = prompt("Digite sua senha:");
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) alert("Erro: " + error.message);
+      else location.reload();
+    }
+
+    function logout() {
+      supabase.auth.signOut();
+      location.reload();
+    }
+
+    function showSection(section) {
+      document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+      document.getElementById(`section-${section}`).classList.remove('hidden');
+    }
+
+    function openTab(n) {
+      document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+      document.getElementById(`tab${n}`).classList.add('active');
+      document.querySelectorAll('[id^="tab-content-"]').forEach(div => div.classList.add('hidden'));
+      document.getElementById(`tab-content-${n}`).classList.remove('hidden');
+    }
+
+    // ==================== PRODUTOS ====================
+    async function loadProducts() {
+      const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+      if (error) return console.error(error);
+      
+      allProducts = data;
+      renderPublicCatalog();
+      renderAdminProducts();
+      populateCategories();
+    }
+
+    function renderPublicCatalog(filtered = null) {
+      const container = document.getElementById('productsGrid');
+      container.innerHTML = '';
+      const productsToShow = filtered || allProducts;
+
+      productsToShow.forEach(p => {
+        const priceHTML = p.promo_price 
+          ? `<span class="text-3xl font-bold text-emerald-400">R$ ${parseFloat(p.promo_price).toFixed(2)}</span> <span class="line-through text-gray-500">R$ ${parseFloat(p.price).toFixed(2)}</span>`
+          : `<span class="text-3xl font-bold">R$ ${parseFloat(p.price).toFixed(2)}</span>`;
+
+        const card = document.createElement('div');
+        card.className = "bg-gray-900 rounded-3xl overflow-hidden shadow-2xl";
+        card.innerHTML = `
+          <img src="${p.image_url || 'https://via.placeholder.com/600x400/1f2937/ffffff?text=Sem+Foto'}" 
+               class="w-full h-56 object-cover">
+          <div class="p-6">
+            <div class="flex justify-between">
+              <h3 class="font-bold text-2xl">${p.name}</h3>
+              ${p.promo_price ? `<span class="bg-red-600 px-4 py-1 text-xs rounded-2xl">PROMOÇÃO</span>` : ''}
+            </div>
+            <p class="text-gray-400 mt-3 line-clamp-3">${p.description || ''}</p>
+            <div class="mt-6">${priceHTML}</div>
+            <button onclick="sendToWhatsApp('${p.name.replace(/'/g, "\\'")}', ${p.promo_price || p.price})" 
+                    class="mt-8 w-full bg-emerald-600 hover:bg-emerald-700 py-5 rounded-2xl font-bold flex items-center justify-center gap-3 text-lg">
+              <i class="fab fa-whatsapp text-2xl"></i> PEDIR NO WHATSAPP
+            </button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function sendToWhatsApp(name, price) {
+      const whatsappNumber = "5538992346793"; // ← TROQUE PELO SEU NÚMERO COM DDI
+      const text = `Olá! Quero comprar:\n*${name}*\nValor: *R$ ${parseFloat(price).toFixed(2)}*`;
+      window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(text)}`, '_blank');
+    }
+
+    function filterProducts() {
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      const category = document.getElementById('categoryFilter').value;
+      
+      const filtered = allProducts.filter(p => {
+        const matchSearch = p.name.toLowerCase().includes(search) || (p.description || '').toLowerCase().includes(search);
+        const matchCategory = !category || p.category === category;
+        return matchSearch && matchCategory;
+      });
+      renderPublicCatalog(filtered);
+    }
+
+    function populateCategories() {
+      const select = document.getElementById('categoryFilter');
+      const cats = [...new Set(allProducts.map(p => p.category).filter(Boolean))];
+      cats.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = cat;
+        select.appendChild(opt);
+      });
+    }
+
+    // Render admin products
+    function renderAdminProducts() {
+      const container = document.getElementById('productsAdminList');
+      container.innerHTML = '';
+      allProducts.forEach(p => {
+        const div = document.createElement('div');
+        div.className = "bg-gray-900 p-6 rounded-3xl flex gap-6";
+        div.innerHTML = `
+          <img src="${p.image_url || ''}" class="w-28 h-28 object-cover rounded-2xl flex-shrink-0">
+          <div class="flex-1">
+            <h4 class="font-bold text-xl">${p.name}</h4>
+            <p class="text-emerald-400">R$ ${p.price} ${p.promo_price ? `→ Promo R$ ${p.promo_price}` : ''}</p>
+            <div class="mt-6 flex gap-3">
+              <button onclick="editProduct('${p.id}')" class="flex-1 bg-gray-800 hover:bg-gray-700 py-3 rounded-2xl">Editar</button>
+              <button onclick="deleteProduct('${p.id}')" class="flex-1 bg-red-600 hover:bg-red-700 py-3 rounded-2xl">Excluir</button>
+            </div>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    async function deleteProduct(id) {
+      if (!confirm('Excluir este produto?')) return;
+      await supabase.from('products').delete().eq('id', id);
+      loadProducts();
+    }
+
+    let editingProductId = null;
+
+    function showProductModal() {
+      editingProductId = null;
+      document.getElementById('modalProductTitle').textContent = "Novo Produto";
+      document.getElementById('productForm').reset();
+      document.getElementById('productModal').classList.remove('hidden');
+    }
+
+    function closeProductModal() {
+      document.getElementById('productModal').classList.add('hidden');
+    }
+
+    async function saveProduct(e) {
+      e.preventDefault();
+      const fileInput = document.getElementById('prodImage');
+      let imageUrl = null;
+
+      if (fileInput.files[0]) {
+        const file = fileInput.files[0];
+        const fileName = Date.now() + '-' + file.name;
+        const { data, error } = await supabase.storage
+          .from('products')
+          .upload(fileName, file, { upsert: true });
+        if (error) alert("Erro ao subir foto: " + error.message);
+        else {
+          const { data: urlData } = supabase.storage.from('products').getPublicUrl(fileName);
+          imageUrl = urlData.publicUrl;
+        }
+      }
+
+      const productData = {
+        name: document.getElementById('prodName').value,
+        description: document.getElementById('prodDesc').value,
+        price: parseFloat(document.getElementById('prodPrice').value),
+        promo_price: document.getElementById('prodPromo').value ? parseFloat(document.getElementById('prodPromo').value) : null,
+        category: document.getElementById('prodCategory').value,
+        image_url: imageUrl || null
+      };
+
+      if (editingProductId) {
+        await supabase.from('products').update(productData).eq('id', editingProductId);
+      } else {
+        await supabase.from('products').insert(productData);
+      }
+
+      closeProductModal();
+      loadProducts();
+    }
+
+    async function editProduct(id) {
+      const { data } = await supabase.from('products').select('*').eq('id', id).single();
+      if (!data) return;
+
+      editingProductId = id;
+      document.getElementById('modalProductTitle').textContent = "Editar Produto";
+      document.getElementById('prodName').value = data.name;
+      document.getElementById('prodDesc').value = data.description || '';
+      document.getElementById('prodPrice').value = data.price;
+      document.getElementById('prodPromo').value = data.promo_price || '';
+      document.getElementById('prodCategory').value = data.category || '';
+      document.getElementById('productModal').classList.remove('hidden');
+    }
+
+    // ==================== VENDAS ====================
+    async function loadSales() {
+      const { data, error } = await supabase.from('sales').select('*').order('sale_date', { ascending: false });
+      if (error) return console.error(error);
+      allSales = data;
+      renderSalesTable();
+    }
+
+    function renderSalesTable() {
+      const tbody = document.getElementById('salesTableBody');
+      tbody.innerHTML = '';
+      allSales.forEach(s => {
+        const lucroLiquido = (parseFloat(s.sale_price) - parseFloat(s.cost_price) - parseFloat(s.fee_paid || 0)).toFixed(2);
+        const row = document.createElement('tr');
+        row.className = "hover:bg-gray-800 transition";
+        row.innerHTML = `
+          <td class="px-6 py-5">${s.order_number}</td>
+          <td class="px-6 py-5">${s.product_name}</td>
+          <td class="px-6 py-5 text-right font-medium">R$ ${parseFloat(s.sale_price).toFixed(2)}</td>
+          <td class="px-6 py-5 text-right font-bold ${lucroLiquido > 0 ? 'text-emerald-400' : 'text-red-400'}">R$ ${lucroLiquido}</td>
+          <td class="px-6 py-5 text-center">${s.received ? '✅' : '⏳'}</td>
+          <td class="px-6 py-5 text-center">
+            <button onclick="editSale('${s.id}')" class="text-blue-400 hover:text-blue-500 mr-4">Editar</button>
+            <button onclick="duplicateSale('${s.id}')" class="text-emerald-400 hover:text-emerald-500 mr-4">Duplicar</button>
+            <button onclick="deleteSale('${s.id}')" class="text-red-400 hover:text-red-500">Excluir</button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    async function deleteSale(id) {
+      if (!confirm('Excluir esta venda?')) return;
+      await supabase.from('sales').delete().eq('id', id);
+      loadSales();
+      loadDashboard();
+    }
+
+    async function duplicateSale(id) {
+      const sale = allSales.find(s => s.id === id);
+      if (!sale) return;
+      const newSale = {...sale};
+      delete newSale.id;
+      delete newSale.sale_date;
+      newSale.order_number += ' (cópia)';
+      await supabase.from('sales').insert(newSale);
+      loadSales();
+      loadDashboard();
+    }
+
+    let editingSaleId = null;
+
+    function showSaleModal() {
+      editingSaleId = null;
+      document.getElementById('saleForm').reset();
+      document.getElementById('saleModal').classList.remove('hidden');
+    }
+
+    function closeSaleModal() {
+      document.getElementById('saleModal').classList.add('hidden');
+    }
+
+    async function saveSale(e) {
+      e.preventDefault();
+      const data = {
+        order_number: document.getElementById('saleOrder').value,
+        product_name: document.getElementById('saleProduct').value,
+        sale_price: parseFloat(document.getElementById('salePrice').value),
+        cost_price: parseFloat(document.getElementById('saleCost').value),
+        fee_paid: parseFloat(document.getElementById('saleFee').value || 0),
+        account_email: document.getElementById('saleEmail').value,
+        account_password: document.getElementById('salePassword').value,
+        link_buy: document.getElementById('saleLinkBuy').value,
+        received: document.getElementById('saleReceived').checked
+      };
+
+      data.profit_gross = data.sale_price - data.cost_price;
+      data.profit_net = data.profit_gross - data.fee_paid;
+
+      if (editingSaleId) {
+        await supabase.from('sales').update(data).eq('id', editingSaleId);
+      } else {
+        await supabase.from('sales').insert(data);
+      }
+
+      closeSaleModal();
+      loadSales();
+      loadDashboard();
+    }
+
+    async function editSale(id) {
+      const { data } = await supabase.from('sales').select('*').eq('id', id).single();
+      if (!data) return;
+      editingSaleId = id;
+      document.getElementById('saleOrder').value = data.order_number;
+      document.getElementById('saleProduct').value = data.product_name;
+      document.getElementById('salePrice').value = data.sale_price;
+      document.getElementById('saleCost').value = data.cost_price;
+      document.getElementById('saleFee').value = data.fee_paid || 0;
+      document.getElementById('saleEmail').value = data.account_email || '';
+      document.getElementById('salePassword').value = data.account_password || '';
+      document.getElementById('saleLinkBuy').value = data.link_buy || '';
+      document.getElementById('saleReceived').checked = data.received || false;
+      document.getElementById('saleModal').classList.remove('hidden');
+    }
+
+    // ==================== DASHBOARD ====================
+    async function loadDashboard() {
+      const sales = allSales; // já carregado
+
+      const now = new Date();
+      const todayStr = now.toISOString().split('T')[0];
+
+      const todaySales = sales.filter(s => s.sale_date && s.sale_date.startsWith(todayStr));
+      const monthSales = sales.filter(s => {
+        const d = new Date(s.sale_date);
+        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      });
+
+      let todayProfit = 0, monthProfit = 0, totalFees = 0;
+
+      todaySales.forEach(s => {
+        const lucro = (s.sale_price - s.cost_price - (s.fee_paid || 0));
+        todayProfit += lucro;
+      });
+
+      monthSales.forEach(s => {
+        const lucro = (s.sale_price - s.cost_price - (s.fee_paid || 0));
+        monthProfit += lucro;
+        totalFees += (s.fee_paid || 0);
+      });
+
+      document.getElementById('todaySales').textContent = todaySales.length;
+      document.getElementById('todayProfit').textContent = `R$ ${todayProfit.toFixed(2)}`;
+      document.getElementById('monthSales').textContent = monthSales.length;
+      document.getElementById('monthProfit').textContent = `R$ ${monthProfit.toFixed(2)}`;
+
+      const summary = document.getElementById('dashboardSummary');
+      summary.innerHTML = `
+        <p class="mb-4"><strong>Total de vendas cadastradas:</strong> ${sales.length}</p>
+        <p class="mb-4"><strong>Taxas pagas no mês:</strong> R$ ${totalFees.toFixed(2)}</p>
+        <p><strong>Lucro real acumulado (mês):</strong> <span class="text-emerald-400">R$ ${monthProfit.toFixed(2)}</span></p>
+      `;
+    }
+
+    // Inicializa tudo
+    window.onload = () => {
+      initApp();
+      // Se quiser login direto no console: adminLogin()
+    };
+  </script>
+</body>
+</html>
